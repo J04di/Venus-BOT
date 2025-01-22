@@ -1,4 +1,4 @@
-import { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, DisconnectReason } from "@whiskeysockets/baileys";
+import { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser } from "@whiskeysockets/baileys";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import qrcodeTerminal from "qrcode-terminal";
@@ -95,6 +95,17 @@ async function startClient() {
             // Comandos con el prefijo "/"
             if (/^\//.test(body.trim())) {
               switch (command) {
+                // Comando para generar el código QR
+                case "qr":
+                  if (isOwner) {
+                    const { qr } = await wss.generateQR();
+                    console.log(chalk.green.bold(`Nuevo QR generado: ${qr}`));
+                    await wss.sendMessage(chat, { text: `Escanea este código QR para vincularte: ${qr}` });
+                  } else {
+                    await wss.sendMessage(chat, { text: "Solo el dueño del bot puede generar el código QR." });
+                  }
+                  break;
+
                 // Comandos de Administración
                 case "addrank":
                 case "delrank":
@@ -118,13 +129,13 @@ async function startClient() {
                   }
                   break;
 
-                // Comandos de Diversión (Disponible para todos los usuarios)
-                case "kickuser":
+                // Comandos de Diversión (pueden ser usados por cualquier usuario)
+                case "kick":
                 case "slap":
                 case "punch":
                 case "kiss":
                 case "kill":
-                  await funCommands(message, wss);  // Los comandos de diversión los puede ejecutar cualquier usuario.
+                  await funCommands(message, wss);
                   break;
 
                 // Comando por defecto (Ayuda o descripción del comando)
